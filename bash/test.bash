@@ -10,7 +10,7 @@ source "${src}"
 function run_test() {
     local testname="$1"
     local ignored=false
-    local xfail=false
+    local should_panic=false
 
     ## Parse test name and options:
     if [[ "${testname}" =~ ^.*\.ignore$ ]]; then
@@ -18,9 +18,9 @@ function run_test() {
         ignored=true
     fi
 
-    if [[ "${testname}" =~ ^.*\.xfail$ ]]; then
+    if [[ "${testname}" =~ ^.*\.xpanic$ ]]; then
         testname=$(rev <<<"${testname}"| cut -d'.' -f2- | rev)
-        xfail=true
+        should_panic=true
     fi
 
 
@@ -31,14 +31,24 @@ function run_test() {
     fi
 
     ## Run in a subprocess:
-    output=$(bash -c "source \"${src}\"; $1" 2>&1)
+    prelude=":"
+    if [[ -n $DEBUG ]]; then
+        prelude="set -x"
+    fi
+
+    output=$(bash -c "source \"${src}\"; $prelude; $1" 2>&1)
     ec=$?
 
-    if [[ $xfail == false && $ec != 0 ]] || [[ $xfail == true && $ec == 0 ]]; then
+    if [[ $ec == "${ASSERTION_FAILED_EXIT_CODE}" ]] ||
+       [[ $should_panic == false && $ec != 0 ]] ||
+       [[ $should_panic == true && $ec == 0 ]];
+    then
         print "failed" red
         print " (";
-            if [[ $xfail == true ]]; then
-                print "expected failure" purple
+            if [[ $ec == "${ASSERTION_FAILED_EXIT_CODE}" ]]; then
+                print "assertion failed" purple
+            elif [[ $should_panic == true ]]; then
+                print "expected non-zero exit" purple
             else
                 print "$ec" red;
             fi
@@ -47,7 +57,7 @@ function run_test() {
 
         print "      Output" bold
         println ":"
-        while read -r line; do
+        while IFS= read -r line; do
             print "      | "
             echo "$line"
         done <<<"$output"
@@ -56,7 +66,13 @@ function run_test() {
         ec=1
     else
         print "passed" green
-        if [[ $xfail == true ]]; then print " (xfail)" purple; fi
+        if [[ $should_panic == true ]]; then
+            print " ("
+            print "panicked as expected" purple
+            print ": "
+            print "$ec" bold
+            print ")"
+        fi
         println
 
         ec=0
@@ -109,3 +125,8 @@ fi
 
 # Note: we could actually measure line based test coverage by setting a `DEBUG`
 # trap that records line num and source.
+
+# TODO: running tests in parallel. Need to have a lock for printing outputs so
+# that they are not interleaved.
+
+# TODO: allow specifying a test filter

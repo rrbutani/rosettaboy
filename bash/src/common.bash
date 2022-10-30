@@ -61,6 +61,9 @@ function backtrace() {
     done
 }
 
+# TODO: it'd be nice to have some kind of `#[track_caller]` equivalent that lets
+# us skip frames (i.e. from `panic` and `assert.*`) in the backtrace.
+
 
 function error() {
     {
@@ -95,14 +98,6 @@ function warn() {
     } >&2
 }
 
-function assert_eq() {
-    if [[ "$1" != "$2" ]]; then
-        s=""
-        if [[ $# -gt 2 ]]; then s=": "; fi
-        panic "expected '$1' == '$2'${s}${*:3}" 2
-    fi
-}
-
 # $1: array variable name; $2: function name
 function list.map() {
     panic "unimplemented"
@@ -129,8 +124,78 @@ function test.common.map2.ignore() {
 
 ################################################################################
 
+# We designate a specific exit code that we use to signal to the test runner
+# that an assertion failed.
+#
+# This lets us check that `xpanic` tests failed due to non-zero exits but *not*
+# due to failed assertions.
+readonly ASSERTION_FAILED_EXIT_CODE=121
+
+# $1: a, $2: b, $3+: message
+function assert.eq() {
+    if [[ "$1" != "$2" ]]; then
+        s=""
+        if [[ $# -gt 2 ]]; then s=": "; fi
+        panic "expected '$1' == '$2'${s}${*:3}" ${ASSERTION_FAILED_EXIT_CODE}
+    fi
+}
+
+# $1: a, $2: b, $3+: message
+function assert.ne() {
+    if [[ "$1" == "$2" ]]; then
+        s=""
+        if [[ $# -gt 2 ]]; then s=": "; fi
+        panic "expected '$1' != '$2'${s}${*:3}" ${ASSERTION_FAILED_EXIT_CODE}
+    fi
+}
+
+
+# $1: val that is expected to be true, $2+: message
+function assert.true() { assert.eq "$1" true "${@:2}"; }
+function assert.t() { assert.true "${@}"; }
+
+# $2: val that is expected to be false, $2+: message
+function assert.false() { assert.eq "$1" false "${@:2}"; }
+function assert.f() { assert.false "${@}"; }
+
+# $@: grep args
+function assert.matches() {
+    local output ret
+
+    set +e # questionable; probably scoped to this pipeline stage w/o lastpipe so it's okay?
+
+    output="$({
+        tee /dev/stderr \
+            | grep "${@}"
+    } 2>&1)"
+    ret=$?
+
+    if [[ $ret != 0 ]]; then
+        println
+        println "Output:" brown
+        println "---------------------------"
+        println "$output"
+        println "---------------------------"
+        panic "expected output (printed above) to match pattern '$(print "$*" bold)' but it did not" ${ASSERTION_FAILED_EXIT_CODE}
+    fi
+
+    set -e
+}
+
+################################################################################
+
 function test.test-lib.smoke() { :; }
+function test.test-lib.eq() { assert.eq 2 2; }
 function test.test-lib.ignored.ignore() { ouch; }
-function test.test-lib.panics.xfail() { panic "whoops"; }
+function test.test-lib.panics.xpanic() { panic "whoops"; }
+
+# These test should fail:
+function test.test-lib.xpanic-when-assertion-fails.xpanic.ignore() {
+    assert.eq 3 4 "uh-oh"
+}
+function test.test-lib.xpanic-without-panic.xpanic.ignore() {
+    assert.eq 2 2;
+    echo "whoops, didn't panic!"
+}
 
 ################################################################################
