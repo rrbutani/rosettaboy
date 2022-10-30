@@ -14,3 +14,16 @@ anyhow = "1"
 clap = { version = "3.1.18", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release-lto]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+opt-level = 3
+
+[profile.release-profiling]
+inherits = "release-lto"
+# split-debuginfo = "packed"
+debug = true
+strip = "none"

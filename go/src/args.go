@@ -14,15 +14,28 @@ type Args struct {
 	Rom      string
 }
 
+func boolFlagWithShort(long string, short string, default_value bool, help string) *bool {
+	var result bool
+
+	flag.BoolVar(&result, long, default_value, help)
+	flag.BoolVar(&result, short, default_value, help)
+
+	return &result
+}
+
 func NewArgs() *Args {
-	var debug_cpu = flag.Bool("debug-cpu", false, "Debug CPU")
-	var debug_gpu = flag.Bool("debug-gpu", false, "Debug GPU")
-	var debug_apu = flag.Bool("debug-apu", false, "Debug APU")
-	var debug_ram = flag.Bool("debug-ram", false, "Debug RAM")
-	var headless = flag.Bool("headless", false, "No video")
-	var silent = flag.Bool("silent", false, "No audio")
-	var turbo = flag.Bool("turbo", false, "No sleep()")
-	var profile = flag.Int("profile", 0, "Exit after N frames")
+	var debug_cpu = boolFlagWithShort("debug-cpu", "c", false, "Debug CPU")
+	var debug_gpu = boolFlagWithShort("debug-gpu", "g", false, "Debug GPU")
+	var debug_apu = boolFlagWithShort("debug-apu", "a", false, "Debug APU")
+	var debug_ram = boolFlagWithShort("debug-ram", "r", false, "Debug RAM")
+	var headless = boolFlagWithShort("headless", "H", false, "No video")
+	var silent = boolFlagWithShort("silent", "S", false, "No audio")
+	var turbo = boolFlagWithShort("turbo", "t", false, "No sleep()")
+
+	var profile int
+	flag.IntVar(&profile, "profile", 0, "Exit after N frames")
+	flag.IntVar(&profile, "p", 0, "Exit after N frames")
+
 	flag.Parse()
 	var rom = flag.Arg(0)
 
@@ -34,7 +47,7 @@ func NewArgs() *Args {
 		Headless: *headless,
 		Silent:   *silent,
 		Turbo:    *turbo,
-		Profile:  *profile,
+		Profile:  profile,
 		Rom:      rom,
 	}
 }

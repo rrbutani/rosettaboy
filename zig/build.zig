@@ -19,8 +19,40 @@ pub fn build(b: *std.build.Builder) void {
     sdk.link(exe, .dynamic);
     exe.addPackage(sdk.getWrapperPackage("sdl2"));
     exe.install();
-    exe.addLibraryPath("/Users/shish2k/homebrew/lib/");
     exe.addPackagePath("clap", "lib/clap/clap.zig");
+
+    // TODO: flto, fno-lto
+    // exe.want_lto = true; // not supported when targetting macOS!
+
+    {
+        const process = std.process;
+        var alloc = std.heap.GeneralPurposeAllocator(.{}){};
+        // defer alloc.deinit();
+
+        const gpa = alloc.allocator();
+
+        // TODO: accept `-l` in LDFLAGS
+        // TODO: map `-iframework` to the below in cflags
+
+        if (process.getEnvVarOwned(gpa, "NIX_CFLAGS_COMPILE")) |cflags| {
+            defer gpa.free(cflags);
+
+            var it = std.mem.tokenize(u8, cflags, " ");
+            while (true) {
+                const word = it.next() orelse break;
+                if (std.mem.eql(u8, word, "-iframework")) {
+                    const framework_path = it.next() orelse {
+                        break;
+                    };
+                    std.debug.print("{s}\n", .{framework_path});
+                    exe.addFrameworkPath(framework_path);
+                }
+            }
+        } else |_| {
+
+        }
+
+    }
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
@@ -37,4 +69,5 @@ pub fn build(b: *std.build.Builder) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
+
 }
