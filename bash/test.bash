@@ -8,15 +8,41 @@ source "${src}"
 
 # $1: test function name
 function run_test() {
-    printf "    %-${max_test_name_len}s ... " "$1"
+    local testname="$1"
+    local ignored=false
+    local xfail=false
 
-    # run in a subprocess:
+    ## Parse test name and options:
+    if [[ "${testname}" =~ ^.*\.ignore$ ]]; then
+        testname=$(rev <<<"${testname}"| cut -d'.' -f2- | rev)
+        ignored=true
+    fi
+
+    if [[ "${testname}" =~ ^.*\.xfail$ ]]; then
+        testname=$(rev <<<"${testname}"| cut -d'.' -f2- | rev)
+        xfail=true
+    fi
+
+
+    printf "    %-${max_test_name_len}s ... " "$testname"
+    if [[ $ignored = true ]]; then
+        println "ignored" brown
+        return 0
+    fi
+
+    ## Run in a subprocess:
     output=$(bash -c "source \"${src}\"; $1" 2>&1)
     ec=$?
 
-    if [[ $ec != 0 ]]; then
+    if [[ $xfail == false && $ec != 0 ]] || [[ $xfail == true && $ec == 0 ]]; then
         print "failed" red
-        print " ("; print "$ec" red; println ")"
+        print " (";
+            if [[ $xfail == true ]]; then
+                print "expected failure" purple
+            else
+                print "$ec" red;
+            fi
+        println ")"
         println
 
         print "      Output" bold
@@ -26,8 +52,14 @@ function run_test() {
             echo "$line"
         done <<<"$output"
         println
+
+        ec=1
     else
-        println "passed" green
+        print "passed" green
+        if [[ $xfail == true ]]; then print " (xfail)" purple; fi
+        println
+
+        ec=0
     fi
 
     return $ec
@@ -74,3 +106,6 @@ else
     print "All tests passed in $((end - start)) seconds." bold
     println
 fi
+
+# Note: we could actually measure line based test coverage by setting a `DEBUG`
+# trap that records line num and source.

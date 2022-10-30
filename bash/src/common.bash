@@ -61,8 +61,20 @@ function backtrace() {
     done
 }
 
+
+function error() {
+    {
+        print "error" red
+        print ": "
+        println "$1"
+        println
+    } >&2
+
+    exit "${2-3}"
+}
+
 # $1: message, $2: exit code (optional)
-function err() {
+function panic() {
     {
         print "error" red
         print ": "
@@ -83,9 +95,17 @@ function warn() {
     } >&2
 }
 
+function assert_eq() {
+    if [[ "$1" != "$2" ]]; then
+        s=""
+        if [[ $# -gt 2 ]]; then s=": "; fi
+        panic "expected '$1' == '$2'${s}${*:3}" 2
+    fi
+}
+
 # $1: array variable name; $2: function name
 function list.map() {
-    err "unimplemented"
+    panic "unimplemented"
 }
 
 function string.len() {
@@ -97,10 +117,20 @@ function cmp.max() {
     :
 }
 
-function test.common.map() {
+################################################################################
+
+function test.common.map.ignore() {
     list.map
 }
 
-function test.common.map2() {
+function test.common.map2.ignore() {
     echo hooray
 }
+
+################################################################################
+
+function test.test-lib.smoke() { :; }
+function test.test-lib.ignored.ignore() { ouch; }
+function test.test-lib.panics.xfail() { panic "whoops"; }
+
+################################################################################
