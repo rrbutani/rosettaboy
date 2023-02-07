@@ -1,6 +1,7 @@
 {
   lib,
   stdenvNoCC,
+  runCommand,
   makeWrapper,
   python3,
   wget,
@@ -17,6 +18,14 @@ stdenvNoCC.mkDerivation {
   src = ./.;
 
   passthru = {
+    # we have to make $out or building will fail...
+    mkBlargg = name: bin: runCommand "rosettaboy-checks-blargg-${name}" {} ''
+        echo $(basename ${bin}) | tee $out
+        find ${gb-autotest-roms} -name '*.gb' \
+          | ${parallel}/bin/parallel --will-cite --line-buffer --keep-order \
+              "${bin} --turbo --silent --headless --frames 200" \
+          | tee -a $out
+      '';
     devTools = [ wget cacert parallel ]
       ++ lib.optional (!stdenvNoCC.isDarwin) elfutils;
   };
