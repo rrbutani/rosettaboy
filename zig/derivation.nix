@@ -1,4 +1,4 @@
-{ 
+{
   pkgs,
   stdenv,
   lib,
@@ -17,7 +17,14 @@
 let
   # Apparently, Nix capitalizing "SDL2" creates an incompatibility:
   # https://github.com/MasterQ32/SDL.zig/issues/14
-  # I'm not sure what the "right" way to do it is. `zig build` seems to just be running `lld -lsdl2`, the SDL2 `.so` files are also capitalized as "libSDL2" on my non-Nix system, and GH:andrewrk/sdl-zig-demo does `exe.linkSystemLibrary("SDL2")` capitalized, so I'm inclined to call this a bug in GH:MasterQ32/SDL.zig for trying to link to non-existent lower-case "sdl2". But then presumably it works in the Docker, so IDK.
+  #
+  # I'm not sure what the "right" way to do it is. `zig build` seems to just be
+  # running `lld -lsdl2`, the SDL2 `.so` files are also capitalized as "libSDL2"
+  # on my non-Nix system, and GH:andrewrk/sdl-zig-demo does
+  # `exe.linkSystemLibrary("SDL2")` capitalized, so I'm inclined to call this a
+  # bug in GH:MasterQ32/SDL.zig for trying to link to non-existent lower-case
+  # "sdl2". But then presumably it works in the Docker, so IDK.
+  #
   # @todo verify this is still necessary
 	SDL2-lowercase = symlinkJoin {
     name =  "${SDL2.pname}-lowercase";
@@ -45,7 +52,7 @@ stdenv.mkDerivation rec {
     ++ lib.optional (!stdenv.isDarwin) SDL2
     ++ lib.optional stdenv.isDarwin SDL2-lowercase
     ;
-  
+
   nativeBuildInputs = [ zig pkg-config ]
     ++ lib.optional (!stdenv.isDarwin) autoPatchelfHook
     ;
@@ -71,8 +78,5 @@ stdenv.mkDerivation rec {
     runHook postInstall
   '';
 
-  meta = with lib; {
-    description = "rosettaboy-zig";
-    mainProgram = "rosettaboy-zig";
-  };
+  meta.description = name;
 }

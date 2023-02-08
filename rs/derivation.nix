@@ -17,7 +17,7 @@ let
   devTools = [ rustfmt rustc cargo ] ++ lib.optional stdenv.isDarwin [libiconv];
 in
 
-naersk.buildPackage {
+naersk.buildPackage rec {
   src = gitignoreSource ./.;
 
   buildInputs = [ SDL2 ];
@@ -29,8 +29,5 @@ naersk.buildPackage {
 
   passthru = { inherit devTools; };
 
-  meta = with lib; {
-    description = "rosettaboy-rs";
-    mainProgram = "rosettaboy-rs";
-  };
+  meta.description = "rosettaboy-rs";
 }

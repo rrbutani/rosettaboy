@@ -180,7 +180,7 @@
 
     checks = let
       # zig-safe is too slow - skip
-      packagesToCheck = filterAttrs (n: v: v.meta ? mainProgram && n != "zig-safe") packages;
+      packagesToCheck = filterAttrs (n: n != "zig-safe") packages;
       mkBlargg = name: package: utils.mkBlargg name "${package}/bin/${package.meta.mainProgram}";
     in mapAttrs mkBlargg packagesToCheck;
 

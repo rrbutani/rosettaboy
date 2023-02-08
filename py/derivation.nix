@@ -26,8 +26,5 @@ py.pkgs.buildPythonApplication rec {
 
   ROSETTABOY_USE_MYPYC = mypycSupport;
 
-  meta = with lib; {
-    inherit name;
-    mainProgram = "rosettaboy-py";
-  };
+  meta.description = name;
 }
