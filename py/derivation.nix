@@ -25,6 +25,7 @@ py.pkgs.buildPythonApplication rec {
   propagatedBuildInputs = runtimeDeps py.pkgs;
 
   ROSETTABOY_USE_MYPYC = mypycSupport;
+  dontUseSetuptoolsCheck = true;
 
   meta.description = name;
 }

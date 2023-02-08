@@ -10,7 +10,7 @@ ext_modules = []
 if USE_MYPYC:
     ext_modules=mypycify([
         'src',
-    ]),
+    ])
 
 setup(
     name='rosettaboy',
