@@ -11,9 +11,10 @@
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    gomod2nix-src = {
+    gomod2nix = {
       url = "github:nix-community/gomod2nix";
-      flake = false;
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.utils.follows = "flake-utils";
     };
     nim-argparse = {
       url = "github:iffy/nim-argparse";
@@ -56,7 +57,7 @@
     flake-utils,
     flake-compat,
     gitignore,
-    gomod2nix-src,
+    gomod2nix,
     nim-argparse,
     php-sdl,
     naersk,
@@ -66,106 +67,72 @@
     gb-autotest-roms,
     cl-gameboy
   }: flake-utils.lib.eachDefaultSystem (system: let
-    pkgs = nixpkgs.legacyPackages.${system};
-    lib = pkgs.lib;
+    pkgs = import nixpkgs {
+      inherit system;
+      overlays = [
+        naersk.overlay
+        zig-overlay.overlays.default
+        gomod2nix.overlays.default
+      ];
+    };
+    inherit (pkgs) lib;
     inherit (builtins) mapAttrs;
     inherit (lib) hiPrio filterAttrs;
-    inherit (gitignore.lib) gitignoreSource;
-    gomod2nix' = rec {
-      gomod2nix = pkgs.callPackage "${gomod2nix-src}" { inherit (lib) buildGoApplication mkGoEnv; };
-      lib = pkgs.callPackage "${gomod2nix-src}/builder" { inherit gomod2nix; };
+
+    callPackage = pkgs.newScope {
+      inherit gb-autotest-roms cl-gameboy;
+      inherit (gitignore.lib) gitignoreSource;
+      inherit php-sdl;
+      inherit nim-argparse;
+      zig = pkgs.zigpkgs.master-2022-11-29;
+      inherit zig-clap zig-sdl;
     };
-    naersk' = pkgs.callPackage naersk {};
-    zig = zig-overlay.packages.${system}.master-2022-11-29;
+    mk = dir: callPackage ./${dir}/derivation.nix;
 
-    utils = pkgs.callPackage ./utils/derivation.nix { inherit gb-autotest-roms cl-gameboy; };
-
-    mkC = {clangSupport ? false, ltoSupport ? false, debugSupport ? false}: 
-      pkgs.callPackage ./c/derivation.nix {
-        stdenv = if clangSupport then pkgs.clangStdenv else pkgs.stdenv;
-        inherit ltoSupport debugSupport;
-      };
-
-    mkCpp = {ltoSupport ? false, debugSupport ? false}:
-      pkgs.callPackage ./cpp/derivation.nix {
-        inherit gitignoreSource ltoSupport debugSupport;
-      };
-      
-    mkGo = {...}: pkgs.callPackage ./go/derivation.nix {
-      inherit gitignoreSource;
-      inherit (gomod2nix'.lib) buildGoApplication;
-      gomod2nix = gomod2nix'.gomod2nix;
-    };
-
-    mkNim = {debugSupport ? false, speedSupport ? false}:
-      pkgs.callPackage ./nim/derivation.nix {
-        inherit (pkgs.nimPackages) buildNimPackage;
-        inherit gitignoreSource nim-argparse debugSupport speedSupport;
-        inherit (pkgs.llvmPackages_14) bintools;
-      };
-
-    mkPhp = {opcacheSupport ? false}:
-      pkgs.callPackage ./php/derivation.nix {
-        inherit gitignoreSource php-sdl opcacheSupport;
-      };
-
-    mkPy = {mypycSupport ? false}:
-      pkgs.callPackage ./py/derivation.nix {
-        inherit mypycSupport gitignoreSource;
-        pythonPackages = pkgs.python310Packages;
-      };
-
-    mkRs = {ltoSupport ? false, debugSupport ? false}:
-      pkgs.callPackage ./rs/derivation.nix {
-        naersk = naersk';
-        inherit gitignoreSource ltoSupport debugSupport;
-      };
-
-    mkZig = {safeSupport ? false, fastSupport ? false}:
-      pkgs.callPackage ./zig/derivation.nix {
-        inherit zig zig-sdl zig-clap safeSupport fastSupport gitignoreSource;
-      };
-
+    utils = mk "utils" {};
   in rec {
     packages = rec {
       inherit utils;
-      
-      c-debug = mkC { debugSupport = true; };
-      c-lto = mkC { ltoSupport = true; };
-      c-release = mkC { };
-      # c-clang-debug = mkC { debugSupport = true; clangSupport = true; };
-      # c-clang-lto = mkC { ltoSupport = true; clangSupport = true; };
-      # c-clang-release = mkC { clangSupport = true; };
-      c = hiPrio c-release;
 
-      cpp-release = mkCpp {};
-      cpp-debug = mkCpp { debugSupport = true; };
-      cpp-lto = mkCpp { ltoSupport = true; };
-      cpp = hiPrio cpp-release;
-      
-      go = mkGo {};
+      c-debug = mk "c" { debugSupport = true; };
+      c-lto = mk "c" { ltoSupport = true; };
+      c-release = mk "c" { };
+      c-clang-debug = mk "c" { debugSupport = true; stdenv = pkgs.clangStdenv; };
+      c-clang-lto = mk "c" { ltoSupport = true; stdenv = pkgs.clangStdenv; };
+      c-clang-release = mk "c" { stdenv = pkgs.clangStdenv; };
+      c = hiPrio c-lto;
 
-      nim-release = mkNim {};
-      nim-debug = mkNim { debugSupport = true; };
-      nim-speed = mkNim { speedSupport = true; };
-      nim = hiPrio nim-release;
+      cpp-release = mk "cpp" { };
+      cpp-debug = mk "cpp" { debugSupport = true; };
+      cpp-lto = mk "cpp" { ltoSupport = true; };
+      cpp-clang-debug = mk "cpp" { debugSupport = true; stdenv = pkgs.clangStdenv; };
+      cpp-clang-lto = mk "cpp" { ltoSupport = true; stdenv = pkgs.clangStdenv; };
+      cpp-clang-release = mk "cpp" { stdenv = pkgs.clangStdenv; };
+      cpp = hiPrio cpp-lto;
 
-      php-release = mkPhp {};
-      php-opcache = mkPhp { opcacheSupport = true; };
-      php = hiPrio php-release;
+      go = mk "go" {};
 
-      py = mkPy {};
+      nim-release = mk "nim" {};
+      nim-debug = mk "nim" { debugSupport = true; };
+      nim-speed = mk "nim" { speedSupport = true; };
+      nim = hiPrio nim-speed;
+
+      php-release = mk "php" {};
+      php-opcache = mk "php" { opcacheSupport = true; };
+      php = hiPrio php-opcache;
+
+      py = mk "py" {};
       # match statement support is only in myypc master
       # https://github.com/python/mypy/commit/d5e96e381f72ad3fafaae8707b688b3da320587d
       # mypyc = mkPy { mypycSupport = true; };
-      
-      rs-debug = mkRs { debugSupport = true; };
-      rs-release = mkRs { };
-      rs-lto = mkRs { ltoSupport = true; };
-      rs = hiPrio rs-release;
-      
-      zig-fast = mkZig { fastSupport = true; };
-      zig-safe = mkZig { safeSupport = true; };
+
+      rs-debug = mk "rs" { debugSupport = true; };
+      rs-release = mk "rs" { };
+      rs-lto = mk "rs" { ltoSupport = true; };
+      rs = hiPrio rs-lto;
+
+      zig-fast = mk "zig" { fastSupport = true; };
+      zig-safe = mk "zig" { safeSupport = true; };
       zig = hiPrio zig-fast;
 
       # I don't think we can join all of them because they collide

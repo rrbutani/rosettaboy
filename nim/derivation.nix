@@ -1,18 +1,18 @@
 {
   lib,
   stdenvNoCC,
-  buildNimPackage,
   gitignoreSource,
   nimPackages,
   nim-argparse,
   git,
   cacert,
-  bintools,
   debugSupport ? false,
   speedSupport ? false
 }:
 
 let
+  inherit (nimPackages) buildNimPackage;
+
   argparse = buildNimPackage rec {
     pname = "argparse";
     version = "master";

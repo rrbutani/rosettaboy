@@ -83,8 +83,15 @@
         "type": "github"
       }
     },
-    "gomod2nix-src": {
-      "flake": false,
+    "gomod2nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "utils": [
+          "flake-utils"
+        ]
+      },
       "locked": {
         "lastModified": 1662501203,
         "narHash": "sha256-4BKeqCX2zwgBiTdlc2DjGQ0CttKm0vSw0r/bdFdM/PQ=",
@@ -174,7 +181,7 @@
         "flake-utils": "flake-utils",
         "gb-autotest-roms": "gb-autotest-roms",
         "gitignore": "gitignore",
-        "gomod2nix-src": "gomod2nix-src",
+        "gomod2nix": "gomod2nix",
         "naersk": "naersk",
         "nim-argparse": "nim-argparse",
         "nixpkgs": "nixpkgs",
