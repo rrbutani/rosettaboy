@@ -1,30 +1,28 @@
 {
   lib,
-  pythonPackages,
+  python311,
   gitignoreSource,
   mypycSupport ? false
 }:
 
 let
-  pyPackages = with pythonPackages; [ 
-    pysdl2
-    mypy
-    black
-    setuptools
-  ];
-  python = pythonPackages.python.withPackages (pypkgs: pyPackages);
-  devTools = [ python ];
+  py = python311;
+  runtimeDeps = pyPkgs: with pyPkgs; [ setuptools pysdl2 ];
+  devDeps = pyPkgs: with pyPkgs; [ mypy black ];
 in
 
-pythonPackages.buildPythonApplication rec {
+py.pkgs.buildPythonApplication rec {
   name = "rosettaboy-py";
   src = gitignoreSource ./.;
 
-  passthru = {
-    inherit devTools python;
+  nativeBuildInputs = lib.optional mypycSupport py.pkgs.mypy;
+
+  passthru = rec {
+    python = py.withPackages (p: (runtimeDeps p) ++ (devDeps p));
+    devTools = [ python ];
   };
 
-  propagatedBuildInputs = pyPackages;
+  propagatedBuildInputs = runtimeDeps py.pkgs;
 
   ROSETTABOY_USE_MYPYC = mypycSupport;
 
