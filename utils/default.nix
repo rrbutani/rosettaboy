@@ -4,6 +4,7 @@
 , makeWrapper
 , python3
 , wget
+, gnugrep
 , cacert
 , parallel
 , elfutils
@@ -24,6 +25,12 @@ stdenvNoCC.mkDerivation {
           | ${parallel}/bin/parallel --will-cite --line-buffer --keep-order \
               "${lib.getExe pkg} --turbo --silent --headless --frames 200" \
           | tee -a $out
+
+        ${lib.getExe gnugrep} -i "unit test passed" $out >/dev/null || {
+          echo "tests didn't seem to pass?"
+          exit 4
+        }
+        ! ${lib.getExe gnugrep} -i "unit test failed" $out >/dev/null
       '';
     devTools = [ wget cacert parallel ]
       ++ lib.optional (!stdenvNoCC.isDarwin) elfutils;
