@@ -146,7 +146,7 @@
 
     checks = let
       # zig-safe is too slow - skip
-      packagesToCheck = filterAttrs (n: _: n != "zig-safe") packages;
+      packagesToCheck = filterAttrs (n: _: n != "utils" && n != "zig-safe") packages;
     in mapAttrs utils.mkBlargg packagesToCheck;
 
     devShells = let
