@@ -1,6 +1,7 @@
 { lib
 , stdenvNoCC
 , gitignoreSource
+, llvmPackages_14
 , nimPackages
 , nim-argparse
 , git
@@ -17,6 +18,14 @@ let
     version = "master";
     src = nim-argparse;
   };
+
+  # Upstream `nimPackages.sdl2` is marked broken on macOS but it actually works
+  # fine:
+  sdl2 = nimPackages.sdl2.overrideAttrs (o: {
+    meta = o.meta // {
+      platforms = o.meta.platforms ++ lib.platforms.darwin;
+    };
+  });
 in
 
 buildNimPackage rec {
@@ -34,8 +43,10 @@ buildNimPackage rec {
     ++ lib.optionals speedSupport [ "-d:danger" "--opt:speed" "-d:lto" "--mm:arc" "--panics:on" ]
     ;
 
-  buildInputs = with nimPackages; [ argparse ]
-    ++ lib.optional (!stdenvNoCC.isDarwin) sdl2;
+  buildInputs = [ argparse sdl2 ];
+
+  # Wants `lld` on macOS:
+  nativeBuildInputs = lib.optional stdenvNoCC.isDarwin llvmPackages_14.bintools;
 
   postInstall = ''
     mv $out/bin/rosettaboy $out/bin/rosettaboy-nim
