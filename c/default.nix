@@ -7,19 +7,12 @@
 , ltoSupport ? false
 , debugSupport ? false
 }:
-
-let
-  devTools = [ clang-tools ];
-in
-
 stdenv.mkDerivation rec {
   name = "rosettaboy-c";
 
   src = ./.;
 
-  passthru = { inherit devTools; };
-
-  enableParallelBuilding = true;
+  passthru.devTools = [ clang-tools ];
 
   buildInputs = [ SDL2 ];
   nativeBuildInputs = [ cmake pkg-config ];

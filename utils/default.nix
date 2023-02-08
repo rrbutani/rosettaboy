@@ -1,15 +1,14 @@
-{
-  lib,
-  stdenvNoCC,
-  runCommand,
-  makeWrapper,
-  python3,
-  wget,
-  cacert,
-  parallel,
-  elfutils,
-  gb-autotest-roms,
-  cl-gameboy
+{ lib
+, stdenvNoCC
+, runCommand
+, makeWrapper
+, python3
+, wget
+, cacert
+, parallel
+, elfutils
+, gb-autotest-roms
+, cl-gameboy
 }:
 
 stdenvNoCC.mkDerivation {

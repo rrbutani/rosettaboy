@@ -1,19 +1,18 @@
-{
-  pkgs,
-  stdenv,
-  lib,
-  darwin,
-  libiconv,
-  zig,
-  pkg-config,
-  SDL2,
-  zig-sdl,
-  zig-clap,
-  symlinkJoin,
-  autoPatchelfHook,
-  gitignoreSource,
-	safeSupport ? false,
-	fastSupport ? false
+{ pkgs
+, stdenv
+, lib
+, darwin
+, libiconv
+, zig
+, pkg-config
+, SDL2
+, zig-sdl
+, zig-clap
+, symlinkJoin
+, autoPatchelfHook
+, gitignoreSource
+, safeSupport ? false
+, fastSupport ? false
 }:
 
 let
@@ -29,9 +28,7 @@ stdenv.mkDerivation rec {
   name = "rosettaboy-zig";
   src = gitignoreSource ./.;
 
-  passthru = {
-    devTools = [ zig ];
-  };
+  passthru.devTools = [ zig ];
 
   buildInputs = [ SDL2 ]
     ++ lib.optionals stdenv.isDarwin (with frameworks; [
@@ -43,7 +40,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ zig pkg-config ]
     ++ lib.optional (!stdenv.isDarwin) autoPatchelfHook
-    ;
+  ;
 
   dontConfigure = true;
   dontBuild = true;
@@ -78,7 +75,7 @@ stdenv.mkDerivation rec {
   ZIG_FLAGS = []
     ++ lib.optional fastSupport "-Doptimize=ReleaseFast"
     ++ lib.optional safeSupport "-Doptimize=ReleaseSafe"
-    ;
+  ;
 
   installPhase = ''
     runHook preInstall

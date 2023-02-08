@@ -19,9 +19,7 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [ cmake pkg-config ]
     ++ lib.optional (!stdenv.isDarwin) autoPatchelfHook;
 
-  passthru = {
-    devTools = [ clang-format ];
-  };
+  passthru.devTools = [ clang-format ];
 
   cmakeFlags = [ ]
     ++ lib.optional debugSupport "-DCMAKE_BUILD_TYPE=Debug"

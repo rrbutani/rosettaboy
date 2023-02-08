@@ -1,22 +1,16 @@
-{
-  lib,
-  stdenv,
-  naersk,
-  SDL2,
-  pkg-config,
-  libiconv,
-  rustfmt,
-  rustc,
-  cargo,
-  gitignoreSource,
-  ltoSupport ? false,
-  debugSupport ? false
+{ lib
+, stdenv
+, naersk
+, SDL2
+, pkg-config
+, libiconv
+, rustfmt
+, rustc
+, cargo
+, gitignoreSource
+, ltoSupport ? false
+, debugSupport ? false
 }:
-
-let
-  devTools = [ rustfmt rustc cargo ] ++ lib.optional stdenv.isDarwin [libiconv];
-in
-
 naersk.buildPackage rec {
   src = gitignoreSource ./.;
 
@@ -27,7 +21,9 @@ naersk.buildPackage rec {
 
   release = !debugSupport && !ltoSupport;
 
-  passthru = { inherit devTools; };
+  passthru.devTools = [ rustfmt rustc cargo ]
+    ++ lib.optional stdenv.isDarwin [ libiconv ]
+  ;
 
   meta.description = "rosettaboy-rs";
 }

@@ -53,20 +53,14 @@
   };
 
   outputs = {
-    self,
-    nixpkgs,
-    flake-utils,
-    flake-compat,
+    self, nixpkgs, flake-utils, flake-compat,
     gitignore,
     gomod2nix,
     nim-argparse,
     php-sdl,
     naersk,
-    zig-overlay,
-    zig-sdl,
-    zig-clap,
-    gb-autotest-roms,
-    cl-gameboy
+    zig-overlay, zig-sdl, zig-clap,
+    gb-autotest-roms, cl-gameboy,
   }: flake-utils.lib.eachDefaultSystem (system: let
     pkgs = import nixpkgs {
       inherit system;
@@ -162,6 +156,7 @@
     in langDevShells // {
       default = pkgs.mkShell {
         inputsFrom = builtins.attrValues langDevShells;
+        inherit shellHook;
       };
       # not yet implemented
       pxd = pkgs.callPackage ./pxd/shell.nix {};

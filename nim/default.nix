@@ -1,13 +1,12 @@
-{
-  lib,
-  stdenvNoCC,
-  gitignoreSource,
-  nimPackages,
-  nim-argparse,
-  git,
-  cacert,
-  debugSupport ? false,
-  speedSupport ? false
+{ lib
+, stdenvNoCC
+, gitignoreSource
+, nimPackages
+, nim-argparse
+, git
+, cacert
+, debugSupport ? false
+, speedSupport ? false
 }:
 
 let
@@ -24,9 +23,7 @@ buildNimPackage rec {
   name = "rosettaboy-nim";
   src = gitignoreSource ./.;
 
-  passthru = {
-    devTools = [ nimPackages.nim git cacert ];
-  };
+  passthru.devTools = [ nimPackages.nim git cacert ];
 
   nimBinOnly = true;
 

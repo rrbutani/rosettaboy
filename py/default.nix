@@ -1,9 +1,8 @@
-{
-  lib,
-  python311,
-  gitignoreSource,
-  fetchFromGitHub,
-  mypycSupport ? false
+{ lib
+, python311
+, gitignoreSource
+, fetchFromGitHub
+, mypycSupport ? false
 }:
 
 let
