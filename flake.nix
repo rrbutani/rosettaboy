@@ -122,9 +122,7 @@
       php = hiPrio php-opcache;
 
       py = mk "py" {};
-      # match statement support is only in myypc master
-      # https://github.com/python/mypy/commit/d5e96e381f72ad3fafaae8707b688b3da320587d
-      # mypyc = mkPy { mypycSupport = true; };
+      mypyc = mk "py" { mypycSupport = true; };
 
       rs-debug = mk "rs" { debugSupport = true; };
       rs-release = mk "rs" { };
