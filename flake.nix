@@ -71,7 +71,7 @@
       ];
     };
     inherit (pkgs) lib;
-    inherit (builtins) mapAttrs;
+    inherit (builtins) mapAttrs removeAttrs;
     inherit (lib) hiPrio filterAttrs;
 
     callPackage = pkgs.newScope {
@@ -140,7 +140,7 @@
 
     checks = let
       # zig-safe is too slow - skip
-      packagesToCheck = filterAttrs (n: _: n != "utils" && n != "zig-safe") packages;
+      packagesToCheck = removeAttrs packages [ "utils" "default" "zig-safe"];
     in mapAttrs utils.mkBlargg packagesToCheck;
 
     devShells = let
