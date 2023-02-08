@@ -88,7 +88,7 @@
       zig = pkgs.zigpkgs.master-2023-02-06;
       inherit zig-clap zig-sdl;
     };
-    mk = dir: callPackage ./${dir}/derivation.nix;
+    mk = dir: callPackage ./${dir};
 
     utils = mk "utils" {};
   in rec {
